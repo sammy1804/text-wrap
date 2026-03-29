@@ -1,0 +1,434 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bansuri Distorted Typography Experiment</title>
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+Devanagari:wght@400;500&display=swap" rel="stylesheet">
+
+    <style>
+        :root {
+            --bg-color: #0b0d10;
+            --text-color: #f0eada;
+            --gold-accent: #d4af37;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            font-family: 'Noto Serif Devanagari', serif;
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            width: 100vw;
+        }
+
+        #ui-layer {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            pointer-events: none;
+            z-index: 10;
+            overflow: hidden;
+        }
+
+        #text-layer {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 5;
+            pointer-events: none;
+        }
+
+        .text-line {
+            position: absolute;
+            white-space: pre-wrap;
+            font-size: 24px;
+            line-height: 1; /* handled via JS */
+            color: rgba(240, 234, 218, 0.75);
+            transition: color 0.3s;
+            text-align: center;
+            will-change: transform, width, opacity;
+            text-shadow: 0px 2px 10px rgba(0,0,0,0.5);
+        }
+
+        .sargam-particle {
+            position: absolute;
+            color: var(--gold-accent);
+            font-size: 28px;
+            font-weight: 500;
+            opacity: 0;
+            pointer-events: none;
+            will-change: transform, opacity;
+            text-shadow: 0px 0px 15px rgba(212, 175, 55, 0.6);
+            /* Centering text around the transform origin */
+            margin-left: -14px;
+            margin-top: -14px;
+        }
+
+        svg {
+            position: absolute;
+            left: 50%;
+            top: 50%;
+            transform: translate(-50%, -50%) rotate(-4deg);
+            z-index: 15;
+            pointer-events: none;
+            filter: drop-shadow(0px 10px 20px rgba(0,0,0,0.8));
+        }
+
+        /* SVG Parts logic */
+        .finger {
+            transition: transform 0.4s cubic-bezier(0.25, 1, 0.5, 1);
+        }
+        
+        #l-f1 { transform-origin: 180px 50px; }
+        #l-f2 { transform-origin: 220px 40px; }
+        #l-f3 { transform-origin: 260px 45px; }
+        #r-f1 { transform-origin: 320px 60px; }
+        #r-f2 { transform-origin: 360px 50px; }
+        #r-f3 { transform-origin: 400px 55px; }
+
+        .lift {
+            transform: translateY(-8px) rotate(-6deg);
+        }
+
+    </style>
+</head>
+<body>
+
+    <!-- DOM TEXT POOL -->
+    <div id="text-layer"></div>
+
+    <!-- UI / PARTICLES POOL -->
+    <div id="ui-layer"></div>
+
+    <!-- BANSURI SVG -->
+    <svg width="600" height="200" viewBox="0 0 600 200">
+        <defs>
+            <linearGradient id="gold" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stop-color="#f0eada"/>
+                <stop offset="50%" stop-color="#d4af37"/>
+                <stop offset="100%" stop-color="#a67c00"/>
+            </linearGradient>
+            
+            <filter id="glow">
+                <feGaussianBlur stdDeviation="2" result="blur" />
+                <feMerge>
+                    <feMergeNode in="blur" />
+                    <feMergeNode in="SourceGraphic" />
+                </feMerge>
+            </filter>
+        </defs>
+
+        <g fill="none" stroke="url(#gold)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" filter="url(#glow)">
+            <!-- Flute body -->
+            <path d="M 40 94 L 560 94 A 6 6 0 0 1 560 106 L 40 106 A 6 6 0 0 1 40 94 Z" />
+            <path d="M 80 94 L 80 106 M 85 94 L 85 106 M 520 94 L 520 106 M 515 94 L 515 106" />
+
+            <!-- Holes & Fingers -->
+            <g id="holes" stroke="url(#gold)" fill="#06080a" stroke-width="1">
+                <!-- Blowing Hole -->
+                <ellipse cx="120" cy="100" rx="5" ry="3" />
+                
+                <!-- Play holes (indices 0 to 5 mapped to 1 to 6) -->
+                <!-- x: 200, 240, 280,   340, 380, 420 -->
+                <ellipse id="h1" cx="200" cy="100" rx="4" ry="2" />
+                <ellipse id="h2" cx="240" cy="100" rx="4" ry="2" />
+                <ellipse id="h3" cx="280" cy="100" rx="4" ry="2" />
+                <ellipse id="h4" cx="340" cy="100" rx="4" ry="2" />
+                <ellipse id="h5" cx="380" cy="100" rx="4" ry="2" />
+                <ellipse id="h6" cx="420" cy="100" rx="4" ry="2" />
+            </g>
+
+            <!-- Hands structure - minimal contours -->
+            <path d="M 160 180 C 150 140 160 115 170 106" />
+            <path id="l-f1" class="finger" d="M 180 50 C 190 55 200 70 200 100" />
+            <path id="l-f2" class="finger" d="M 220 40 C 230 45 240 60 240 100" />
+            <path id="l-f3" class="finger" d="M 260 45 C 270 50 280 65 280 100" />
+            <path d="M 300 60 C 310 65 315 80 315 106" opacity="0.5"/> <!-- left pinky resting -->
+            
+            <path d="M 460 180 C 470 140 460 115 450 106" />
+            <path id="r-f1" class="finger" d="M 320 60 C 330 65 340 70 340 100" />
+            <path id="r-f2" class="finger" d="M 360 50 C 370 55 380 65 380 100" />
+            <path id="r-f3" class="finger" d="M 400 55 C 410 60 420 65 420 100" />
+            <path d="M 440 65 C 445 70 450 80 445 106" opacity="0.5"/> <!-- right pinky resting -->
+        </g>
+    </svg>
+
+    <!-- CORE LOGIC -->
+    <script type="module">
+        import { prepareWithSegments, layoutNextLine } from 'https://esm.sh/@chenglou/pretext';
+
+        // ------------------
+        // CONFIG & STATE
+        // ------------------
+        const pText = `कर्मण्येवाधिकारस्ते मा फलेषु कदाचन।
+मा कर्मफलहेतुर्भूर्मा ते सङ्गोऽस्त्वकर्मणि॥
+योगस्थः कुरु कर्माणि सङ्गं त्यक्त्वा धनञ्जय।
+सिद्ध्यसिद्ध्योः समो भूत्वा समत्वं योग उच्यते॥
+यदा यदा हि धर्मस्य ग्लानिर्भवति भारत।
+अभ्युत्थानमधर्मस्य तदात्मानं सृजाम्यहम्॥
+परित्राणाय साधूनां विनाशाय च दुष्कृताम्।
+धर्मसंस्थापनार्थाय सम्भवामि युगे युगे॥
+वीतरागभयक्रोधा मन्मया मामुपाश्रिताः।
+बहवो ज्ञानतपसा पूता मद्भावमागताः॥
+कर्मण्यकर्म यः पश्येदकर्मणि च कर्म यः।
+स बुद्धिमान्मनुष्येषु स युक्तः कृत्स्नकर्मकृत्॥`;
+
+        const sargamNotes = ["सा", "रे", "ग", "म", "प", "ध", "नि"];
+        const FLUTE_HOLES = [
+            "#l-f1", "#l-f2", "#l-f3",
+            "#r-f1", "#r-f2", "#r-f3"
+        ];
+        
+        let cx = window.innerWidth / 2;
+        let cy = window.innerHeight / 2;
+        let baseWidth = Math.min(800, window.innerWidth - 80);
+        let baseLineHeight = 36;
+        let fontStr = `24px 'Noto Serif Devanagari', 'Hind', serif`;
+
+        let preparedText = null;
+
+        // Resize handler
+        window.addEventListener('resize', () => {
+            cx = window.innerWidth / 2;
+            cy = window.innerHeight / 2;
+            baseWidth = Math.min(800, window.innerWidth - 80);
+        });
+
+        // ------------------
+        // PARTICLES MANAGER
+        // ------------------
+        const POOL_SIZE = 80;
+        const uiLayer = document.getElementById('ui-layer');
+        const particles = [];
+
+        for (let i = 0; i < POOL_SIZE; i++) {
+            const el = document.createElement('div');
+            el.className = 'sargam-particle';
+            uiLayer.appendChild(el);
+            particles.push({
+                el: el,
+                active: false,
+                x: 0, y: 0, 
+                vx: 0, vy: 0,
+                life: 0, startLife: 100,
+                radius: 0, strength: 0
+            });
+        }
+
+        function spawnSargam(holeIndex, isStrong) {
+            const p = particles.find(p => !p.active);
+            if (!p) return;
+
+            // Compute SVG hole real dom position
+            // The SVG is rotated -4deg and centered.
+            // Absolute position approx based on offsets from center:
+            let svgXOffsets = [-100, -60, -20, 40, 80, 120];
+            let offsetX = svgXOffsets[holeIndex];
+            
+            // apply slight rotation offset
+            let rot = -4 * (Math.PI / 180);
+            let finalX = cx + (offsetX * Math.cos(rot)) - (0 * Math.sin(rot));
+            let finalY = cy + (offsetX * Math.sin(rot)) + (0 * Math.cos(rot));
+
+            p.active = true;
+            p.x = finalX;
+            p.y = finalY;
+            p.vx = (Math.random() - 0.5) * 1.5;
+            p.vy = - (Math.random() * 0.8 + 1.2);
+            p.life = isStrong ? 280 : 150;
+            p.startLife = p.life;
+            p.radius = isStrong ? 240 : 120;
+            p.strength = isStrong ? 120 : 50; 
+
+            p.el.textContent = sargamNotes[Math.floor(Math.random() * sargamNotes.length)];
+            p.el.style.opacity = 0;
+            p.baseScale = isStrong ? (0.8 + Math.random()*0.5) : (0.5 + Math.random()*0.3);
+            p.el.style.transform = `translate(${p.x}px, ${p.y}px) scale(${p.baseScale})`;
+        }
+
+        function updateParticles() {
+            for (let p of particles) {
+                if (!p.active) continue;
+                
+                p.life--;
+                if (p.life <= 0) {
+                    p.active = false;
+                    p.el.style.opacity = 0;
+                    continue;
+                }
+
+                // Add slight sine wave drift
+                p.vx += Math.sin(p.life * 0.05) * 0.02;
+                
+                p.x += p.vx;
+                p.y += p.vy;
+                
+                let progress = 1 - (p.life / p.startLife);
+                let op = progress < 0.2 ? progress / 0.2 : (progress > 0.8 ? (1-progress)/0.2 : 1);
+                op *= 0.8;
+                let sc = p.baseScale * (1 + progress * 0.5);
+
+                p.el.style.opacity = op;
+                p.el.style.transform = `translate(${p.x}px, ${p.y}px) scale(${sc})`;
+            }
+        }
+
+        // ------------------
+        // MUSIC INTERACTION
+        // ------------------
+        let currentHoleStates = [false, false, false, false, false, false]; // false: open (lifted), true: closed (down)
+
+        function beatInterval() {
+            // Pick a random set of fingers to change
+            for(let i = 0; i < 6; i++) {
+                if (Math.random() > 0.6) {
+                    currentHoleStates[i] = !currentHoleStates[i];
+                    const fing = document.querySelector(FLUTE_HOLES[i]);
+                    if (currentHoleStates[i]) {
+                        // Open hole -> lift !
+                        fing.classList.add("lift");
+                        // Emit strong particle
+                        setTimeout(() => spawnSargam(i, true), 100);
+                    } else {
+                        // Closed
+                        fing.classList.remove("lift");
+                        if (Math.random() > 0.5) {
+                            spawnSargam(i, false); // softly emit ambient sound
+                        }
+                    }
+                }
+            }
+
+            // Schedule next beat
+            let nextBeat = Math.random() < 0.3 ? 300 : 800 + Math.random() * 600;
+            setTimeout(beatInterval, nextBeat);
+        }
+
+        // ------------------
+        // TEXT RENDERING
+        // ------------------
+        const TEXT_POOL_SIZE = 40;
+        const textLayer = document.getElementById('text-layer');
+        const textDOMPool = [];
+
+        for(let i=0; i<TEXT_POOL_SIZE; i++){
+            let div = document.createElement('div');
+            div.className = 'text-line';
+            textLayer.appendChild(div);
+            textDOMPool.push(div);
+        }
+
+        // Physics distortion envelope
+        function computeDisplacement(lineY, lineCenter) {
+            let dx = 0;
+            let dw = 0;
+
+            for (let p of particles) {
+                if (!p.active) continue;
+                
+                let distY = lineY - p.y;
+                let distX = lineCenter - p.x;
+                let distSq = distY*distY + distX*distX;
+                let maxRadSq = p.radius * p.radius;
+
+                if (distSq < maxRadSq) {
+                    let d = Math.sqrt(distSq);
+                    let factor = 1 - (d / p.radius);
+                    
+                    // Cubic ease
+                    let smooth = factor * factor * (3 - 2 * factor);
+                    
+                    // The line is pushed *horizontally* away from the particle center
+                    // If particle is generic center, pushing happens to the left or right!
+                    dx += Math.sign(distX) * smooth * p.strength;
+                    
+                    // We also slightly squeeze the text width to "bend" it
+                    dw -= smooth * (p.strength * 0.4);
+                }
+            }
+
+            return { dx, dw };
+        }
+
+        function renderTextLayout() {
+            if (!preparedText) return;
+
+            let cursor = { segmentIndex: 0, graphemeIndex: 0 };
+            
+            // To center vertically, we must guess paragraph height roughly.
+            let startY = cy - 250; 
+            let currentY = startY;
+            
+            let poolIdx = 0;
+
+            while (true) {
+                // compute distortions at this Y level
+                let { dx, dw } = computeDisplacement(currentY, cx);
+                
+                let w = Math.max(200, baseWidth + dw);
+                const line = layoutNextLine(preparedText, cursor, w);
+                if (line === null) break;
+
+                let leftOffset = cx - (line.width / 2) + Math.min(Math.max(dx, -baseWidth/2), baseWidth/2);
+
+                if (poolIdx < textDOMPool.length) {
+                    let div = textDOMPool[poolIdx];
+                    div.style.left = `${leftOffset}px`;
+                    div.style.top = `${currentY}px`;
+                    div.style.width = `${line.width}px`;
+                    
+                    if (div.textContent !== line.text) {
+                        div.textContent = line.text;
+                    }
+                    div.style.opacity = 1;
+                }
+
+                cursor = line.end;
+                currentY += baseLineHeight;
+                poolIdx++;
+
+                if (poolIdx > 100) break; // safety
+            }
+
+            // Hide unused
+            while(poolIdx < textDOMPool.length) {
+                textDOMPool[poolIdx].style.opacity = 0;
+                poolIdx++;
+            }
+        }
+
+        // ------------------
+        // GAME LOOP
+        // ------------------
+        function loop() {
+            updateParticles();
+            renderTextLayout();
+            requestAnimationFrame(loop);
+        }
+
+        // Ensure font is slightly loaded before prepare
+        document.fonts.ready.then(() => {
+            preparedText = prepareWithSegments(pText, fontStr, { whiteSpace: 'pre-wrap' });
+            
+            // Start everything
+            currentHoleStates = currentHoleStates.map(()=> Math.random() > 0.5);
+            beatInterval();
+            loop();
+        });
+
+    </script>
+</body>
+</html>
